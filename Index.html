@@ -1,0 +1,285 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Student Exit Gate Pass Request App</title>
+
+    <link rel="stylesheet" href="StylesCommon.css" />
+    <link rel="stylesheet" href="StylesYearlyAdmissionKitSpecific.css" />
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.17.0/xlsx.full.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.9.2/html2pdf.bundle.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/moment.js/2.29.4/moment.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/moment-timezone/0.5.34/moment-timezone-with-data.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.25/jspdf.plugin.autotable.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
+  </head>
+  <body>
+    <div class="primaryContainerDiv">
+      <div id="loadingSpinner" style="display: none">
+        <div class="spinner"></div>
+      </div>
+      <div class="infoPopup" id="successPopup">
+        <div class="infoPopup-content">
+          <div class="infoPopup-icon success"></div>
+          <h2 class="infoPopup-heading success">Success!</h2>
+          <div id="successMessage" class="infoPopup-message"></div>
+          <button class="green" id="successOkButton">OKAY</button>
+        </div>
+      </div>
+      <div class="infoPopup" id="errorPopup">
+        <div class="infoPopup-content">
+          <div class="infoPopup-icon error"></div>
+          <h2 class="infoPopup-heading error">Error!</h2>
+          <div id="errorMessage" class="infoPopup-message"></div>
+          <button class="red" onclick="CLOSE_INFO_POPUP('errorPopup')">
+            TRY AGAIN
+          </button>
+        </div>
+      </div>
+      <div class="infoPopup" id="infoPopup">
+        <div class="infoPopup-content">
+          <div class="infoPopup-icon info"></div>
+          <h2 class="infoPopup-heading info">Information</h2>
+          <div id="infoMessage" class="infoPopup-message"></div>
+          <button class="green" onclick="CLOSE_INFO_POPUP('infoPopup')">
+            OKAY
+          </button>
+        </div>
+      </div>
+      <div class="infoPopup" id="confirmationPopup">
+        <div class="infoPopup-content">
+          <div class="infoPopup-icon confirmation"></div>
+          <div class="infoPopup-message" id="confirmationMessage"></div>
+          <div class="button-row">
+            <button class="red" id="confirmationNoButton">NO</button>
+            <button class="green" id="confirmationYesButton">YES</button>
+          </div>
+        </div>
+      </div>
+
+      <div class="infoPopup" id="confirmationGridPopup">
+        <div class="infoPopup-content">
+          <div class="infoPopup-icon confirmation"></div>
+
+          <!-- Status Text Area -->
+          <div id="confirmationGridStatusText" class="heading"></div>
+
+          <!-- Table Grid Container -->
+          <div
+            id="confirmationGridContainer"
+            class="collection-table-container scrollable-content-table"
+            style="margin-top: 10px"
+          >
+            <table id="confirmationGridTable">
+              <thead id="confirmationGridTHead" class="table-header">
+                <!-- Table headers will be dynamically generated here -->
+              </thead>
+              <tbody id="confirmationGridTBody">
+                <!-- Table rows will be dynamically generated here -->
+              </tbody>
+            </table>
+          </div>
+
+          <!-- Buttons for Confirmation -->
+          <div class="button-row">
+            <button class="red" id="confirmationGridNoButton">NO</button>
+            <button class="green" id="confirmationGridYesButton">YES</button>
+          </div>
+        </div>
+      </div>
+
+      <div class="popup" style="display: flex" id="passwordPopup">
+        <div class="popup-content scrollable-content">
+          <img
+            src="https://drive.google.com/thumbnail?id=15-SQ9oW0U2eX2vsWmyxvmhwu9Q1QgOZm&sz=w500"
+            alt="School Logo"
+          />
+
+          <h2>Student Exit Gate Pass Request App</h2>
+
+          <input
+            type="text"
+            id="passworTxtBox"
+            placeholder="Password"
+            required
+          />
+          <div class="error" id="inputPasswordError"></div>
+          <div class="button-row">
+            <button
+              class="red"
+              onclick="
+                document.getElementById('passworTxtBox').value = '';
+                document.getElementById('inputPasswordError').innerHTML = '';
+              "
+            >
+              Reset
+            </button>
+            <button class="green" id="submitPassBtn" onclick="submitPass()">
+              Login
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <div class="popup" id="menuPopup">
+        <div class="popup-content scrollable-content">
+          <img
+            src="https://drive.google.com/thumbnail?id=15-SQ9oW0U2eX2vsWmyxvmhwu9Q1QgOZm&sz=w500"
+            alt="School Logo"
+          />
+          <div class="flex">
+            <div
+              class="user-info-block"
+              id="login-user-name-div_fp"
+              style="display: none"
+            >
+              <p id="login-user-name-lbl_fp"></p>
+            </div>
+
+            <button
+              class="green"
+              id="ggStudentDailyExitTrackerBtn"
+              onclick="studentDailyExitBtnClick()"
+              style="display: none"
+            >
+              Student Daily Exit
+            </button>
+            <button
+              class="green"
+              id="ggStdEntryBtn"
+              onclick="ggStdEntryBtnClick()"
+              style="display: none"
+            >
+              Tution Student Check in
+            </button>
+            <button
+              class="green"
+              id="ggSplStdEntryBtn"
+              onclick="ggSplStdEntryBtnClick()"
+              style="display: none"
+            >
+              Special Entry Check in System
+            </button>
+
+            <button
+              class="green"
+              id="ggHostelCheckoutBtn"
+              onclick="ggHostelCheckoutBtnClick()"
+              style="display: none"
+            >
+              Hostelers Exit / CheckOut System
+            </button>
+
+            <button class="red" onclick="onLogoutClick()">Logout</button>
+          </div>
+        </div>
+      </div>
+
+      <div class="popup" id="dailyExitPopup">
+        <div class="popup-content scrollable-content">
+          <div class="refresh-button-container">
+            <button class="refresh-btn-new" onclick="handleRefreshClick()">
+              <span class="refresh-text">Refresh</span>
+              <span class="refresh-icon">⟳</span>
+            </button>
+          </div>
+
+          <div class="popup-title-box"></div>
+
+          <div
+            class="dynamic-dropdown-container"
+            id="dynamic-dropdown-container"
+          ></div>
+          <div class="button-row">
+            <button class="red" onclick="stdExitBackClick()">Back</button>
+            <button class="green" id="stdSubmitBtn" onclick="stdSubmitClick()">
+              Proceed
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <div class="popup" id="stdEntryPopup">
+        <div class="popup-content scrollable-content">
+          <div class="refresh-button-container">
+            <button class="refresh-btn-new" onclick="stdEntryPopupRefClick()">
+              <span class="refresh-text">Refresh</span>
+              <span class="refresh-icon">⟳</span>
+            </button>
+          </div>
+
+          <div class="popup-title-box"></div>
+
+          <div
+            class="dynamic-dropdown-container"
+            id="stdEntry-dynamic-dropdown-container"
+          ></div>
+          <div class="button-row">
+            <button
+              class="red"
+              id="stdEntry-back"
+              onclick="stdEntryBackBtnClick()"
+            >
+              Back
+            </button>
+            <button
+              class="green"
+              id="stdEntry-submit"
+              onclick="stdEntrySubClick()"
+            >
+              Proceed
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <div class="popup" id="splStdEntryPopup">
+        <div class="popup-content scrollable-content">
+          <div class="refresh-button-container">
+            <button
+              class="refresh-btn-new"
+              onclick="splStdEntryPopupRefClick()"
+            >
+              <span class="refresh-text">Refresh</span>
+              <span class="refresh-icon">⟳</span>
+            </button>
+          </div>
+
+          <div class="popup-title-box"></div>
+
+          <div
+            class="dynamic-dropdown-container"
+            id="splStdEntry-dynamic-dropdown-container"
+          ></div>
+
+          <div class="button-row">
+            <button
+              class="red"
+              id="splStdEntry-back"
+              onclick="splStdEntryBackBtnClick()"
+            >
+              Back
+            </button>
+            <button
+              class="green"
+              id="splStdEntry-submit"
+              onclick="splStdEntrySubClick()"
+            >
+              Proceed
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <script src="ScriptCommon.js"></script>
+    <script src="ScriptConstants.js"></script>
+    <script src="Script.js"></script>
+    <script src="ScriptDailyExit.js"></script>
+    <script src="ScriptStdEntry.js"></script>
+    <script src="ScriptSpecialStdEntry.js"></script>
+  </body>
+</html>
