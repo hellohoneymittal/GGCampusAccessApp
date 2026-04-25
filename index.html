@@ -170,7 +170,7 @@
               onclick="ggHostelCheckoutBtnClick()"
               style="display: none"
             >
-              Hostelers Exit / CheckOut System
+              Hostelers Exit / Checkout System
             </button>
 
             <button class="red" onclick="onLogoutClick()">Logout</button>
@@ -178,101 +178,7 @@
         </div>
       </div>
 
-      <div class="popup" id="dailyExitPopup">
-        <div class="popup-content scrollable-content">
-          <div class="refresh-button-container">
-            <button class="refresh-btn-new" onclick="handleRefreshClick()">
-              <span class="refresh-text">Refresh</span>
-              <span class="refresh-icon">⟳</span>
-            </button>
-          </div>
-
-          <div class="popup-title-box"></div>
-
-          <div
-            class="dynamic-dropdown-container"
-            id="dynamic-dropdown-container"
-          ></div>
-          <div class="button-row">
-            <button class="red" onclick="stdExitBackClick()">Back</button>
-            <button class="green" id="stdSubmitBtn" onclick="stdSubmitClick()">
-              Proceed
-            </button>
-          </div>
-        </div>
-      </div>
-
-      <div class="popup" id="stdEntryPopup">
-        <div class="popup-content scrollable-content">
-          <div class="refresh-button-container">
-            <button class="refresh-btn-new" onclick="stdEntryPopupRefClick()">
-              <span class="refresh-text">Refresh</span>
-              <span class="refresh-icon">⟳</span>
-            </button>
-          </div>
-
-          <div class="popup-title-box"></div>
-
-          <div
-            class="dynamic-dropdown-container"
-            id="stdEntry-dynamic-dropdown-container"
-          ></div>
-          <div class="button-row">
-            <button
-              class="red"
-              id="stdEntry-back"
-              onclick="stdEntryBackBtnClick()"
-            >
-              Back
-            </button>
-            <button
-              class="green"
-              id="stdEntry-submit"
-              onclick="stdEntrySubClick()"
-            >
-              Proceed
-            </button>
-          </div>
-        </div>
-      </div>
-
-      <div class="popup" id="splStdEntryPopup">
-        <div class="popup-content scrollable-content">
-          <div class="refresh-button-container">
-            <button
-              class="refresh-btn-new"
-              onclick="splStdEntryPopupRefClick()"
-            >
-              <span class="refresh-text">Refresh</span>
-              <span class="refresh-icon">⟳</span>
-            </button>
-          </div>
-
-          <div class="popup-title-box"></div>
-
-          <div
-            class="dynamic-dropdown-container"
-            id="splStdEntry-dynamic-dropdown-container"
-          ></div>
-
-          <div class="button-row">
-            <button
-              class="red"
-              id="splStdEntry-back"
-              onclick="splStdEntryBackBtnClick()"
-            >
-              Back
-            </button>
-            <button
-              class="green"
-              id="splStdEntry-submit"
-              onclick="splStdEntrySubClick()"
-            >
-              Proceed
-            </button>
-          </div>
-        </div>
-      </div>
+      <div id="popupContainer"></div>
     </div>
 
     <script src="ScriptCommon.js"></script>
@@ -281,5 +187,6 @@
     <script src="ScriptDailyExit.js"></script>
     <script src="ScriptStdEntry.js"></script>
     <script src="ScriptSpecialStdEntry.js"></script>
+    <script src="ScriptHostelersCheckout.js"></script>
   </body>
 </html>

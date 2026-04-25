@@ -1,3 +1,64 @@
+function renderMenus(roleData) {
+  SHOW_BUTTON_BY_ADMIN_ROLE(
+    "ggStudentDailyExitTrackerBtn",
+    "Student Daily Exit Tracker Role",
+    roleData,
+  );
+  SHOW_BUTTON_BY_ADMIN_ROLE(
+    "ggStdEntryBtn",
+    "Tution Student Entry Tracker Role",
+    roleData,
+  );
+  SHOW_BUTTON_BY_ADMIN_ROLE(
+    "ggSplStdEntryBtn",
+    "Tution Student Entry Tracker Role",
+    roleData,
+  );
+
+  SHOW_BUTTON_BY_ADMIN_ROLE(
+    "ggHostelCheckoutBtn",
+    "Hostel Check Out Role",
+    roleData,
+  );
+
+  homePageClick();
+  setUserNameOnFrontScreen(selectedUser?.name);
+}
+
+async function LOAD_HTML_FILE(fileName, containerId = "popupContainer") {
+  try {
+    const container = document.getElementById(containerId);
+
+    const res = await fetch(fileName);
+
+    if (!res.ok) {
+      throw new Error("File not found: " + fileName);
+    }
+
+    const html = await res.text();
+
+    container.innerHTML += html;
+  } catch (error) {
+    console.error(error);
+  }
+}
+
+async function INIT_POPUPS() {
+  const files = [
+    "dailyExitPopup.html",
+    "hostelCheckout.html",
+    "splStdEntryPopup.html",
+    "stdEntryPopup.html",
+  ];
+
+  for (const file of files) {
+    await LOAD_HTML_FILE("Pages/" + file);
+  }
+}
+document.addEventListener("DOMContentLoaded", async function () {
+  await INIT_POPUPS();
+});
+
 function formatDuration(startTimestamp, endTimestamp) {
   // Calculate the difference in milliseconds
   const durationMs = endTimestamp - startTimestamp;

@@ -43,27 +43,6 @@ document.addEventListener("DOMContentLoaded", async function () {
   }
 });
 
-function renderMenus(roleData) {
-  SHOW_BUTTON_BY_ADMIN_ROLE(
-    "ggStudentDailyExitTrackerBtn",
-    "Student Daily Exit Tracker Role",
-    roleData,
-  );
-  SHOW_BUTTON_BY_ADMIN_ROLE(
-    "ggStdEntryBtn",
-    "Tution Student Entry Tracker Role",
-    roleData,
-  );
-  SHOW_BUTTON_BY_ADMIN_ROLE(
-    "ggSplStdEntryBtn",
-    "Tution Student Entry Tracker Role",
-    roleData,
-  );
-
-  homePageClick();
-  setUserNameOnFrontScreen(selectedUser?.name);
-}
-
 async function submitPass() {
   const errorDiv = document.getElementById("inputPasswordError");
   errorDiv.innerHTML = "";
