@@ -55,6 +55,7 @@ async function INIT_POPUPS() {
     await LOAD_HTML_FILE("Pages/" + file);
   }
 }
+
 document.addEventListener("DOMContentLoaded", async function () {
   await INIT_POPUPS();
 });
