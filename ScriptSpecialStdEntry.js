@@ -61,10 +61,15 @@ function PROCESS_DAILY_ENTRY_DATA(
 
     const now = new Date();
     const lastTimeDate = new Date(now.getTime() + duration * 60000);
+
+    const dd = String(lastTimeDate.getDate()).padStart(2, "0");
+    const mmDate = String(lastTimeDate.getMonth() + 1).padStart(2, "0");
+    const yyyy = lastTimeDate.getFullYear();
+
     const hh = String(lastTimeDate.getHours()).padStart(2, "0");
     const mm = String(lastTimeDate.getMinutes()).padStart(2, "0");
 
-    const lastTime = `${hh}:${mm}`; // 24 hour format
+    const lastTime = `${dd}/${mmDate}/${yyyy} ${hh}:${mm}`;
 
     (row[2]?.split("\n") || []).forEach((s) => {
       const name = s.trim();
