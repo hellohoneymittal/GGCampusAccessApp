@@ -1,6 +1,7 @@
 let pendinghostelCheckoutList = {};
 let selectedHostelCheckout = [];
 let keyFiltersDatahostelCheckout = {};
+let hostelCheckoutRowMap = {};
 
 CREATE_MULTI_SELECT_DROPDOWN_WITH_CATEGORY_WITH_KEYFILTER({
   containerId: "hostelCheckout-dynamic-dropdown-container",
@@ -19,6 +20,7 @@ function PROCESS_HOSTEL_CHECKOUT_DATA(
   hcReqSheetData,
   allStudentsData,
 ) {
+  hostelCheckoutRowMap = {};
   const today = new Date();
   const requestSet = new Set();
   const approvedSet = new Set();
@@ -128,6 +130,7 @@ function PROCESS_HOSTEL_CHECKOUT_DATA(
   // =============================
   pending.forEach((name) => {
     const originalKey = name.replace(/^s_/, "");
+    debugger;
     const obj = allStudentsData[originalKey];
     const requestedByObj = requestedByMap[name] || {};
 
@@ -135,7 +138,7 @@ function PROCESS_HOSTEL_CHECKOUT_DATA(
     let clsHindi = CLASS_NAME_HINDI_MAP[cls] || cls;
 
     const finalObj = {
-      value: name,
+      value: obj?.studentHindiName || name,
       englishValue: name,
       class: cls || "",
       enableTime: "",
@@ -145,16 +148,16 @@ function PROCESS_HOSTEL_CHECKOUT_DATA(
       duration: requestedByObj.duration || "",
       purpose: requestedByObj.purpose || "",
       lastTime: requestedByObj.lastTime || "",
+      rowNo: obj?.rowNo || "",
     };
+
+    hostelCheckoutRowMap[name] = obj?.rowNo || "";
 
     if (!obj || !cls || !categorized[clsHindi]) {
       categorized["Others"].push(finalObj);
       return;
     }
 
-    const hindiName = obj.studentHindiName || obj.studentName;
-
-    finalObj.value = `s_${hindiName}`;
     categorized[clsHindi].push(finalObj);
   });
 
@@ -237,7 +240,6 @@ async function hostelCheckoutSubClick() {
       const purpose = obj.purpose || "";
       const lastTime = obj.lastTime || "";
 
-      // group by matching request details
       const key = `${requestedBy}__${reason}__${durationType}__${duration}__${purpose}`;
 
       if (!grouped[key]) {
@@ -249,10 +251,14 @@ async function hostelCheckoutSubClick() {
           purpose,
           lastTime,
           studentList: [],
+          rowNos: [],
         };
       }
 
       grouped[key].studentList.push(selectedName);
+
+      // row map se row add karo
+      grouped[key].rowNos.push(hostelCheckoutRowMap[selectedName] || "");
     });
 
     const payload = Object.values(grouped).map((g) => ({
@@ -264,14 +270,16 @@ async function hostelCheckoutSubClick() {
       purpose: g.purpose,
       lastTime: g.lastTime,
       approvedBy: approvedBy,
+      rowNos: g.rowNos.filter(Boolean),
     }));
 
     console.log("Sending:", payload);
 
     const res = await CALL_API("SAVE_HOSTEL_CHECKOUT_APPROVAL_DATA", payload);
 
+    debugger;
     if (res?.status) {
-      resetHCForm();
+      resetHostelCheckoutForm();
       SHOW_SUCCESS_POPUP("Saved successfully ✅");
     } else {
       SHOW_ERROR_POPUP("Error saving data ❌");
@@ -282,14 +290,14 @@ async function hostelCheckoutSubClick() {
   }
 }
 
-function resetHCForm() {
-  removeSelectedDataFromPendingEntryHC();
+function resetHostelCheckoutForm() {
+  removeSelectedDataFromPendingEntryHostelCheckout();
   selectedHostelCheckout = [];
   populateMultiSelectDropdownHostelCheckout();
 }
 
-function removeSelectedDataFromPendingEntryHC() {
-  // selected ka unique set banao (fast lookup)
+function removeSelectedDataFromPendingEntryHostelCheckout() {
+  debugger;
   const selectedSet = new Set(
     selectedHostelCheckout.map((s) =>
       typeof s === "object" ? s.englishValue : s,

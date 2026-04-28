@@ -17,7 +17,13 @@ function renderMenus(roleData) {
 
   SHOW_BUTTON_BY_ADMIN_ROLE(
     "ggHostelCheckoutBtn",
-    "Hostel Check Out Role",
+    "Hostel CheckoutCheckIn Role",
+    roleData,
+  );
+
+  SHOW_BUTTON_BY_ADMIN_ROLE(
+    "ggHostelCheckinBtn",
+    "Hostel CheckoutCheckIn Role",
     roleData,
   );
 
@@ -46,7 +52,8 @@ async function LOAD_HTML_FILE(fileName, containerId = "popupContainer") {
 async function INIT_POPUPS() {
   const files = [
     "dailyExitPopup.html",
-    "hostelCheckout.html",
+    "hostelCheckoutPopup.html",
+    "hostelCheckinPopup.html",
     "splStdEntryPopup.html",
     "stdEntryPopup.html",
   ];
