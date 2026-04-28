@@ -1,3 +1,27 @@
-<div class="popup" id="HostelCheckoutPopup">
-  <div class="popup-content scrollable-content">Testing</div>
+<!doctype html>
+<div class="popup" id="hostelCheckoutPopup">
+  <div class="popup-content scrollable-content">
+    <div class="refresh-button-container">
+      <div class="popup-title-box"></div>
+      <div class="refresh-button-div">
+        <button class="refresh-btn-new" onclick="hostelCheckoutRefClick()">
+          <span class="refresh-text">Refresh</span>
+          <span class="refresh-icon">⟳</span>
+        </button>
+      </div>
+    </div>
+
+    <div
+      class="dynamic-dropdown-container"
+      id="hostelCheckout-dynamic-dropdown-container"
+    ></div>
+    <div class="button-row">
+      <button class="red" id="" onclick="hostelCheckoutBackBtnClick()">
+        Back
+      </button>
+      <button class="green" id="" onclick="hostelCheckoutSubClick()">
+        Proceed
+      </button>
+    </div>
+  </div>
 </div>
