@@ -53,6 +53,7 @@ function PROCESS_HOSTEL_CHECKOUT_DATA(
     if (!isSameDay(rowDate, today)) continue;
 
     const requestedBy = row[3] || "";
+
     const reason = row[4] || "";
     const durationType = (row[5] || "").toLowerCase(); // day // min
     const durationValue = Number(row[6]) || 0;
@@ -130,7 +131,7 @@ function PROCESS_HOSTEL_CHECKOUT_DATA(
   // =============================
   pending.forEach((name) => {
     const originalKey = name.replace(/^s_/, "");
-    debugger;
+
     const obj = allStudentsData[originalKey];
     const requestedByObj = requestedByMap[name] || {};
 
@@ -168,10 +169,23 @@ function PROCESS_HOSTEL_CHECKOUT_DATA(
     if (!categorized[cls].length) delete categorized[cls];
   });
 
-  splKeyFiltersDataStdEntry = GET_UNIQUE_REQUESTED_BY(requestedByMap);
+  keyFiltersDatahostelCheckout = GET_UNIQUE_REQUESTED_BY_HC(requestedByMap);
+
   allData = categorized;
 
   return categorized;
+}
+
+function GET_UNIQUE_REQUESTED_BY_HC(data) {
+  return {
+    requestedBy: [
+      ...new Set(
+        Object.values(data)
+          .map((obj) => obj.requestedBy || "")
+          .filter(Boolean),
+      ),
+    ],
+  };
 }
 
 function populateMultiSelectDropdownHostelCheckout() {
@@ -202,8 +216,7 @@ async function ggHostelCheckoutBtnClick() {
     response?.data?.allStudentsData,
     role,
   );
-  keyFiltersDatahostelCheckout = {};
-  console.log(pendinghostelCheckoutList);
+
   populateMultiSelectDropdownHostelCheckout();
   SHOW_SPECIFIC_DIV("hostelCheckoutPopup");
   SET_DIV_TITLE("hostelCheckoutPopup", "Hostelers Checkout System");
@@ -277,7 +290,6 @@ async function hostelCheckoutSubClick() {
 
     const res = await CALL_API("SAVE_HOSTEL_CHECKOUT_APPROVAL_DATA", payload);
 
-    debugger;
     if (res?.status) {
       resetHostelCheckoutForm();
       SHOW_SUCCESS_POPUP("Saved successfully ✅");
@@ -297,7 +309,6 @@ function resetHostelCheckoutForm() {
 }
 
 function removeSelectedDataFromPendingEntryHostelCheckout() {
-  debugger;
   const selectedSet = new Set(
     selectedHostelCheckout.map((s) =>
       typeof s === "object" ? s.englishValue : s,
