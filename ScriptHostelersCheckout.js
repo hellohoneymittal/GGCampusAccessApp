@@ -199,8 +199,10 @@ function populateMultiSelectDropdownHostelCheckout() {
       );
     },
     {
-      showSelectAll: true,
+      showSelectAll: false,
       showFilters: true,
+      showCategoryView: false,
+      showDataBasedOnFilters: false,
     },
     keyFiltersDatahostelCheckout,
   );
