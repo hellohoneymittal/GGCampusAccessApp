@@ -1093,8 +1093,12 @@ function CREATE_MULTI_SELECT_DROPDOWN_WITH_CATEGORY_WITH_KEYFILTER({
   const {
     showSelectAll = false,
     showFilters = false,
-    showCategoryToggle = true,
+    showCategoryView = true,
+    selectionLimit = null,
+    showDataBasedOnFilters = false,
   } = controls;
+
+  const showCategoryToggle = true;
 
   const container = document.getElementById(containerId);
   if (!container) return;
@@ -1173,7 +1177,7 @@ function CREATE_MULTI_SELECT_DROPDOWN_WITH_CATEGORY_WITH_KEYFILTER({
 
     categoryWiseCheckbox = document.createElement("input");
     categoryWiseCheckbox.type = "checkbox";
-    categoryWiseCheckbox.checked = true;
+    categoryWiseCheckbox.checked = showCategoryView;
     categoryWiseCheckbox.id = "dynamicDropdownCategory_" + containerId; // bind only this
     categoryWiseCheckbox.classList.add("dynamic-dropdown-switch-input");
 
@@ -1496,13 +1500,42 @@ function CREATE_MULTI_SELECT_DROPDOWN_WITH_CATEGORY_WITH_KEYFILTER({
   }
 
   function updateSelection() {
-    let selected = [];
     const allCheckboxes = getAllCheckboxes();
+
+    // ==================================================
+    // GENERIC DYNAMIC LIMIT SUPPORT (Backward Safe)
+    // ==================================================
+    if (selectionLimit !== null) {
+      let limit =
+        typeof selectionLimit === "function"
+          ? selectionLimit()
+          : selectionLimit;
+
+      limit = Number(limit);
+
+      if (limit > 0) {
+        const checkedBoxes = Array.from(allCheckboxes).filter(
+          (cb) => cb.checked,
+        );
+
+        // If selected > limit → keep first N checked
+        if (checkedBoxes.length > limit) {
+          checkedBoxes.forEach((cb, index) => {
+            cb.checked = index < limit;
+          });
+        }
+      }
+    }
+
+    // ==================================================
+    // OLD LOGIC START (UNCHANGED BEHAVIOR)
+    // ==================================================
+    let selected = [];
 
     allCheckboxes.forEach((cb) => {
       if (cb.checked) {
         try {
-          selected.push(JSON.parse(cb.value)); // 🔥 object return
+          selected.push(JSON.parse(cb.value)); // object return
         } catch (e) {
           selected.push(cb.value); // fallback
         }
@@ -1510,6 +1543,7 @@ function CREATE_MULTI_SELECT_DROPDOWN_WITH_CATEGORY_WITH_KEYFILTER({
     });
 
     const total = allCheckboxes.length;
+
     dropdownBtn.innerText = selected.length
       ? `${selected.length} / ${total} Selected`
       : title;
@@ -1522,14 +1556,17 @@ function CREATE_MULTI_SELECT_DROPDOWN_WITH_CATEGORY_WITH_KEYFILTER({
       );
 
       const checkboxes = itemsDiv.querySelectorAll("input[type='checkbox']");
+
       const total = checkboxes.length;
 
       let selectedCount = 0;
+
       checkboxes.forEach((cb) => {
         if (cb.checked) selectedCount++;
       });
 
       const catName = categories[index];
+
       header.innerText = `${catName} (${selectedCount} / ${total})`;
     });
 
@@ -1540,9 +1577,44 @@ function CREATE_MULTI_SELECT_DROPDOWN_WITH_CATEGORY_WITH_KEYFILTER({
     const isKeyFilter = e.target.closest(".dropdown-keyfilters");
     const isItem = e.target.closest(".dropdown-item");
 
-    if (isKeyFilter) return; // ignore
+    // OLD LOGIC SAFE
+    if (isKeyFilter) return; // ignore key filter clicks
+    if (!isItem) return; // only actual dropdown items
 
-    if (isItem) updateSelection(); // only real items
+    const changedCheckbox = e.target;
+
+    // ==================================================
+    // NEW GENERIC LIMIT FEATURE (Backward Compatible)
+    // ==================================================
+    if (
+      changedCheckbox.type === "checkbox" &&
+      changedCheckbox.checked &&
+      typeof selectionLimit !== "undefined" &&
+      selectionLimit !== null
+    ) {
+      let limit =
+        typeof selectionLimit === "function"
+          ? selectionLimit()
+          : selectionLimit;
+
+      limit = Number(limit);
+
+      if (limit > 0) {
+        const checkedCount = dropdownContent.querySelectorAll(
+          ".dropdown-item input[type='checkbox']:checked",
+        ).length;
+
+        if (checkedCount > limit) {
+          changedCheckbox.checked = false;
+
+          SHOW_ERROR_POPUP(`Maximum ${limit} selections allowed.`);
+          return;
+        }
+      }
+    }
+
+    // OLD MAIN LOGIC
+    updateSelection();
   });
 
   // SELECT ALL
@@ -1562,20 +1634,23 @@ function CREATE_MULTI_SELECT_DROPDOWN_WITH_CATEGORY_WITH_KEYFILTER({
   // FILTERS
   if (btnAll) {
     btnAll.onclick = () => {
-      dropdownContent
-        .querySelectorAll(".dropdown-item")
-        .forEach((l) => (l.style.display = "flex"));
+      // Reuse existing search + key filter logic
+      searchBox.dispatchEvent(new Event("keyup"));
 
-      updateCategoryVisibility("ALL");
       setActiveFilter(btnAll);
     };
   }
 
   if (btnSelected) {
     btnSelected.onclick = () => {
+      // First apply search/filter logic
+      searchBox.dispatchEvent(new Event("keyup"));
+
       dropdownContent.querySelectorAll(".dropdown-item").forEach((l) => {
-        const cb = l.querySelector("input");
-        l.style.display = cb.checked ? "flex" : "none";
+        if (l.style.display !== "none") {
+          const cb = l.querySelector("input");
+          l.style.display = cb.checked ? "flex" : "none";
+        }
       });
 
       updateCategoryVisibility("SELECTED");
@@ -1585,9 +1660,14 @@ function CREATE_MULTI_SELECT_DROPDOWN_WITH_CATEGORY_WITH_KEYFILTER({
 
   if (btnPending) {
     btnPending.onclick = () => {
+      // First apply search/filter logic
+      searchBox.dispatchEvent(new Event("keyup"));
+
       dropdownContent.querySelectorAll(".dropdown-item").forEach((l) => {
-        const cb = l.querySelector("input");
-        l.style.display = !cb.checked ? "flex" : "none";
+        if (l.style.display !== "none") {
+          const cb = l.querySelector("input");
+          l.style.display = !cb.checked ? "flex" : "none";
+        }
       });
 
       updateCategoryVisibility("PENDING");
@@ -1632,15 +1712,25 @@ function CREATE_MULTI_SELECT_DROPDOWN_WITH_CATEGORY_WITH_KEYFILTER({
         let filterMatch = true;
         const hasKeyFilters = Object.keys(keyFilters || {}).length > 0;
 
+        let anyFilterSelected = false; // ✅ NEW
+
         if (hasKeyFilters) {
           for (let key in activeKeyFilters) {
             const set = activeKeyFilters[key];
+
+            if (set.size) {
+              anyFilterSelected = true; // ✅ NEW
+            }
 
             if (set.size && (!obj || !set.has(obj[key]))) {
               filterMatch = false;
               break;
             }
           }
+        }
+
+        if (showDataBasedOnFilters && !anyFilterSelected) {
+          filterMatch = false;
         }
 
         const finalMatch = searchMatch && filterMatch;
@@ -1670,38 +1760,22 @@ function CREATE_MULTI_SELECT_DROPDOWN_WITH_CATEGORY_WITH_KEYFILTER({
   clearBtn.onclick = () => {
     searchBox.value = "";
 
-    // 🔥 reset all items
-    dropdownContent.querySelectorAll(".dropdown-item").forEach((l) => {
-      l.style.display = "flex";
-    });
+    // Reapply current filter/search rules
+    searchBox.dispatchEvent(new Event("keyup"));
 
-    // reset categories + correct count
-    const categoryBlocks = dropdownContent.querySelectorAll(
-      ".dropdown-category-header",
-    );
-
-    categoryBlocks.forEach((header, index) => {
-      const catDiv = header.parentElement;
-      catDiv.style.display = "block";
-
-      const itemsDiv = catDiv.querySelector(".dropdown-category-items");
-      const checkboxes = itemsDiv.querySelectorAll("input[type='checkbox']");
-
-      const total = checkboxes.length;
-
-      let selectedCount = 0;
-      checkboxes.forEach((cb) => {
-        if (cb.checked) selectedCount++;
-      });
-
-      const catName = categories[index];
-      header.querySelector(".dropdown-category-text").innerText =
-        `${catName} (${selectedCount} / ${total})`;
-    });
+    // keep active top button mode if selected
+    if (btnSelected && btnSelected.classList.contains("active-filter")) {
+      btnSelected.click();
+    } else if (btnPending && btnPending.classList.contains("active-filter")) {
+      btnPending.click();
+    } else if (btnAll && btnAll.classList.contains("active-filter")) {
+      btnAll.click();
+    }
   };
 
   dropdown.appendChild(dropdownBtn);
   dropdown.appendChild(dropdownContent);
+
   if (categoryWiseCheckbox) {
     categoryWiseCheckbox.onchange = function () {
       const allHeaders = dropdownContent.querySelectorAll(
@@ -1713,14 +1787,13 @@ function CREATE_MULTI_SELECT_DROPDOWN_WITH_CATEGORY_WITH_KEYFILTER({
       );
 
       if (this.checked) {
-        // restore old layout
         allHeaders.forEach((h) => (h.style.display = "flex"));
+
         allCategoryBoxes.forEach((box) => {
           box.style.display = "block";
           box.style.paddingLeft = "";
         });
       } else {
-        // hide category headings
         allHeaders.forEach((h) => (h.style.display = "none"));
 
         allCategoryBoxes.forEach((box) => {
@@ -1729,8 +1802,16 @@ function CREATE_MULTI_SELECT_DROPDOWN_WITH_CATEGORY_WITH_KEYFILTER({
         });
       }
     };
+
+    // 🔥 apply initial state
+    categoryWiseCheckbox.dispatchEvent(new Event("change"));
   }
+
+  dropdown.forceUpdateSelection = updateSelection;
   container.appendChild(dropdown);
+  if (showDataBasedOnFilters) {
+    searchBox.dispatchEvent(new Event("keyup"));
+  }
 }
 
 function UPDATE_MULTI_SELECT_DROPDOWN_WITH_CATEGORY_WITH_KEYFILTER(
