@@ -21,80 +21,49 @@ function PROCESS_HOSTEL_CHECKIN_DATA(
   allStudentsData,
 ) {
   hostelCheckinRowMap = {};
-  const today = new Date();
-  const requestSet = new Set();
-  const checkedInSet = new Set();
   const requestedByMap = {};
 
-  function isSameDay(d1, d2) {
-    return (
-      d1 &&
-      d1.getFullYear() === d2.getFullYear() &&
-      d1.getMonth() === d2.getMonth() &&
-      d1.getDate() === d2.getDate()
-    );
-  }
+  // =============================
+  // 1. GET ALL HOSTLERS WITH currentResident = N
+  // =============================
+  const pending = [];
+
+  Object.keys(allStudentsData || {}).forEach((key) => {
+    const obj = allStudentsData[key];
+
+    if (obj?.hostler === "Y" && obj?.currentResident === "N") {
+      pending.push(key);
+    }
+  });
 
   // =============================
-  // 1. BASE DATA = APPROVED SHEET
+  // 2. GET LATEST DETAILS FROM APPROVED SHEET
+  // bottom to top
   // =============================
-  for (let i = 1; i < hcReqApprovedSheetData.length; i++) {
+  for (let i = hcReqApprovedSheetData.length - 1; i >= 1; i--) {
     const row = hcReqApprovedSheetData[i];
-    const rowDate = PARSE_IST_DATE(row[0]);
 
-    if (!isSameDay(rowDate, today)) continue;
+    const studentName = row[2] || "";
+    if (!studentName) continue;
 
-    const requestedBy = row[3] || "";
-    const reason = row[4] || "";
-    const lastTime = row[5] || "";
-    const approvedBy = row[6] || "";
-    const duration = row[7] || "";
-    const durationType = row[8] || "";
-    const purpose = row[9] || "";
+    if (!pending.includes(studentName)) continue;
 
-    (row[2]?.split("\n") || []).forEach((s) => {
-      const name = s.trim();
+    // already found latest row
+    if (requestedByMap[studentName]) continue;
 
-      if (name) {
-        requestSet.add(name);
-
-        requestedByMap[name] = {
-          requestedBy,
-          reason,
-          lastTime,
-          approvedBy,
-          duration,
-          durationType,
-          purpose,
-        };
-      }
-    });
+    requestedByMap[studentName] = {
+      requestedBy: row[3] || "",
+      reason: row[4] || "",
+      lastTime: row[5] || "",
+      approvedBy: row[6] || "",
+      durationType: row[7] || "",
+      duration: row[8] || "",
+      purpose: row[9] || "",
+    };
   }
 
   // =============================
-  // 2. CHECKIN SHEET => SKIP THESE
-  // =============================
-  for (let i = 1; i < hChkInDataSheetData.length; i++) {
-    const row = hChkInDataSheetData[i];
-    const rowDate = PARSE_IST_DATE(row[0]);
-
-    if (!isSameDay(rowDate, today)) continue;
-
-    (row[2]?.split("\n") || []).forEach((s) => {
-      const name = s.trim();
-      if (name) checkedInSet.add(name);
-    });
-  }
-
-  // =============================
-  // 3. PENDING = APPROVED - CHECKEDIN
-  // =============================
-  const pending = Array.from(requestSet).filter(
-    (name) => !checkedInSet.has(name),
-  );
-
-  // =============================
-  // 4. CATEGORY INIT
+  // 3. CATEGORY INIT
   // =============================
   const ALL_CLASS_NAME =
     "Pre Nursery, Nursery, KG, UKG, I, II, III, IV, V, VI, VII, VIII, IX, X, XI, XII";
@@ -110,11 +79,10 @@ function PROCESS_HOSTEL_CHECKIN_DATA(
   categorized["Others"] = [];
 
   // =============================
-  // 5. MAP DATA
+  // 4. MAP FINAL DATA
   // =============================
   pending.forEach((name) => {
-    const originalKey = name.replace(/^s_/, "");
-    const obj = allStudentsData[originalKey];
+    const obj = allStudentsData[name];
     const reqObj = requestedByMap[name] || {};
 
     let cls = obj?.studentOrgClassName;
@@ -132,10 +100,9 @@ function PROCESS_HOSTEL_CHECKIN_DATA(
       duration: reqObj.duration || "",
       durationType: reqObj.durationType || "",
       purpose: reqObj.purpose || "",
-      rowNo: reqObj.rowNo || "",
+      rowNo: obj.rowNo || "",
     };
 
-    // fast lookup map for submit click
     hostelCheckinRowMap[name] = obj.rowNo || "";
 
     if (!obj || !cls || !categorized[clsHindi]) {
@@ -153,7 +120,7 @@ function PROCESS_HOSTEL_CHECKIN_DATA(
     if (!categorized[cls].length) delete categorized[cls];
   });
 
-  splKeyFiltersDataStdEntry = GET_UNIQUE_REQUESTED_BY(requestedByMap);
+  keyFiltersDatahostelCheckin = GET_UNIQUE_REQUESTED_BY(requestedByMap);
   allData = categorized;
 
   return categorized;
@@ -170,8 +137,10 @@ function populateMultiSelectDropdownHostelCheckin() {
       );
     },
     {
-      showSelectAll: true,
+      showSelectAll: false,
       showFilters: true,
+      showCategoryView: false,
+      showDataBasedOnFilters: true,
     },
     keyFiltersDatahostelCheckin,
   );
@@ -179,14 +148,13 @@ function populateMultiSelectDropdownHostelCheckin() {
 
 async function ggHostelCheckinBtnClick() {
   const response = await CALL_API("GET_HOSTEL_CHECKIN_APPROVAL_RAW_DATA", {});
-
+  debugger;
   pendinghostelCheckinList = PROCESS_HOSTEL_CHECKIN_DATA(
     response?.data?.hcReqApprovedSheetData,
     response?.data?.hChkInDataSheetData,
     response?.data?.allStudentsData,
   );
 
-  keyFiltersDatahostelCheckin = {};
   console.log(pendinghostelCheckinList);
   populateMultiSelectDropdownHostelCheckin();
   SHOW_SPECIFIC_DIV("hostelCheckinPopup");
@@ -200,13 +168,17 @@ async function hostelCheckinSubClick() {
       return;
     }
 
-    const payload = {
-      studentList: selectedHostelCheckin.join("\n"),
-      rowNos: selectedHostelCheckin.map((name) => hostelCheckinRowMap[name]),
-      doneBy: selectedUser?.name || "",
-    };
+    const doneBy = selectedUser?.name || "";
+
+    // one student = one row payload
+    const payload = selectedHostelCheckin.map((name) => ({
+      studentName: name,
+      rowNo: hostelCheckinRowMap[name] || "",
+      doneBy,
+    }));
 
     console.log(payload);
+
     const res = await CALL_API("SAVE_HOSTEL_CHECKIN_APPROVAL_DATA", payload);
 
     if (res?.status) {

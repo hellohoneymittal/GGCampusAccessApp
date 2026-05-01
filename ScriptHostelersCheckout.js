@@ -202,7 +202,7 @@ function populateMultiSelectDropdownHostelCheckout() {
       showSelectAll: false,
       showFilters: true,
       showCategoryView: false,
-      showDataBasedOnFilters: false,
+      showDataBasedOnFilters: true,
     },
     keyFiltersDatahostelCheckout,
   );
@@ -234,12 +234,12 @@ async function hostelCheckoutSubClick() {
     const approvedBy = selectedUser?.name || "";
     const allStudentObjects = [];
 
-    // allData flatten
+    // flatten allData
     Object.values(allData || {}).forEach((arr) => {
       arr.forEach((obj) => allStudentObjects.push(obj));
     });
 
-    const grouped = {};
+    const payload = [];
 
     selectedHostelCheckout.forEach((selectedName) => {
       const obj = allStudentObjects.find(
@@ -248,45 +248,18 @@ async function hostelCheckoutSubClick() {
 
       if (!obj) return;
 
-      const requestedBy = obj.requestedBy || "";
-      const reason = obj.reason || "";
-      const durationType = obj.durationType || "";
-      const duration = obj.duration || "";
-      const purpose = obj.purpose || "";
-      const lastTime = obj.lastTime || "";
-
-      const key = `${requestedBy}__${reason}__${durationType}__${duration}__${purpose}`;
-
-      if (!grouped[key]) {
-        grouped[key] = {
-          requestedBy,
-          reason,
-          durationType,
-          duration,
-          purpose,
-          lastTime,
-          studentList: [],
-          rowNos: [],
-        };
-      }
-
-      grouped[key].studentList.push(selectedName);
-
-      // row map se row add karo
-      grouped[key].rowNos.push(hostelCheckoutRowMap[selectedName] || "");
+      payload.push({
+        studentName: selectedName, // ✅ one student one row
+        requestedBy: obj.requestedBy || "",
+        reason: obj.reason || "",
+        durationType: obj.durationType || "",
+        duration: obj.duration || "",
+        purpose: obj.purpose || "",
+        lastTime: obj.lastTime || "",
+        approvedBy: approvedBy,
+        rowNos: hostelCheckoutRowMap[selectedName] || "",
+      });
     });
-
-    const payload = Object.values(grouped).map((g) => ({
-      studentList: g.studentList.join("\n"),
-      requestedBy: g.requestedBy,
-      reason: g.reason,
-      durationType: g.durationType,
-      duration: g.duration,
-      purpose: g.purpose,
-      lastTime: g.lastTime,
-      approvedBy: approvedBy,
-      rowNos: g.rowNos.filter(Boolean),
-    }));
 
     console.log("Sending:", payload);
 
