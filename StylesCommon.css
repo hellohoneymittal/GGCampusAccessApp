@@ -1833,6 +1833,21 @@ input[type="radio"] {
   font-weight: 500;
 }
 
+.dynamic-dropdown-copy-btn {
+  position: absolute;
+  top: 8px;
+  right: 8px;
+  width: 34px;
+  height: 34px;
+  border-radius: 50%;
+  background: white;
+  border: 1px solid #ccc;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  cursor: pointer;
+}
+
 @media (min-width: 768px) {
   .dynamic-dropdown-container {
     min-height: 475px;
