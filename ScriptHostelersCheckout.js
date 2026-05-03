@@ -257,7 +257,7 @@ async function hostelCheckoutSubClick() {
         purpose: obj.purpose || "",
         lastTime: obj.lastTime || "",
         approvedBy: approvedBy,
-        rowNos: hostelCheckoutRowMap[selectedName] || "",
+        rowNo: hostelCheckoutRowMap[selectedName] || "",
       });
     });
 
