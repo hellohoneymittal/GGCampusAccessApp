@@ -1283,17 +1283,20 @@ function CREATE_MULTI_SELECT_DROPDOWN_WITH_CATEGORY_WITH_KEYFILTER({
 
         const cb = document.createElement("input");
         cb.type = "checkbox";
-        cb.value = val;
+
+        const actualValue = val.replace(/\s*\(\d+\)\s*$/, "").trim();
+
+        cb.value = actualValue;
 
         cb.onchange = () => {
-          if (cb.checked) activeKeyFilters[key].add(val);
-          else activeKeyFilters[key].delete(val);
+          if (cb.checked) activeKeyFilters[key].add(actualValue);
+          else activeKeyFilters[key].delete(actualValue);
 
-          applyKeyFilters(); // 🔥 ONLY THIS
+          applyKeyFilters();
         };
 
         const span = document.createElement("span");
-        span.innerText = val;
+        span.innerText = val; // UI shows Parent (13)
 
         label.append(cb, span);
         options.appendChild(label);
@@ -1309,7 +1312,7 @@ function CREATE_MULTI_SELECT_DROPDOWN_WITH_CATEGORY_WITH_KEYFILTER({
   const categories = Object.keys(data || {});
 
   // =============================
-  // CATEGORY LOOP (🔥 UPDATED)
+  // CATEGORY LOOP (UPDATED)
   // =============================
   categories.forEach((category) => {
     const catDiv = document.createElement("div");

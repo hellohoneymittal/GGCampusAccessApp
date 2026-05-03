@@ -120,10 +120,28 @@ function PROCESS_HOSTEL_CHECKIN_DATA(
     if (!categorized[cls].length) delete categorized[cls];
   });
 
-  keyFiltersDatahostelCheckin = GET_UNIQUE_REQUESTED_BY(requestedByMap);
+  keyFiltersDatahostelCheckin = populateKeyFilterCheckIn(categorized);
   allData = categorized;
-
   return categorized;
+}
+
+function populateKeyFilterCheckIn(data) {
+  const counts = {};
+
+  Object.values(data || {})
+    .flat()
+    .forEach((obj) => {
+      const name = obj.requestedBy || "";
+      if (name) {
+        counts[name] = (counts[name] || 0) + 1;
+      }
+    });
+
+  const requestedBy = Object.entries(counts).map(
+    ([name, count]) => `${name} (${count})`,
+  );
+
+  return requestedBy.length ? { requestedBy } : {};
 }
 
 function populateMultiSelectDropdownHostelCheckin() {
@@ -220,6 +238,10 @@ function removeSelectedDataFromPendingEntryHostelCheckin() {
       delete pendinghostelCheckinList[cls];
     }
   });
+
+  keyFiltersDatahostelCheckin = populateKeyFilterCheckIn(
+    pendinghostelCheckinList,
+  );
 }
 
 function hostelCheckinBackBtnClick() {
