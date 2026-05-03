@@ -58,6 +58,7 @@ function PROCESS_HOSTEL_CHECKOUT_DATA(
     const durationType = (row[5] || "").toLowerCase(); // day // min
     const durationValue = Number(row[6]) || 0;
     const purpose = row[7] || "";
+    const otp = row[8] || "";
 
     const now = new Date();
     const lastTimeDate = new Date(now);
@@ -83,6 +84,7 @@ function PROCESS_HOSTEL_CHECKOUT_DATA(
           duration: durationValue,
           purpose: purpose,
           lastTime: lastTime,
+          otp: otp,
         };
       }
     });
@@ -139,7 +141,7 @@ function PROCESS_HOSTEL_CHECKOUT_DATA(
     let clsHindi = CLASS_NAME_HINDI_MAP[cls] || cls;
 
     const finalObj = {
-      value: obj?.studentHindiName || name,
+      value: `${obj?.studentHindiName || name}${requestedByObj.otp ? ` (${requestedByObj.otp})` : ""}`,
       englishValue: name,
       class: cls || "",
       enableTime: "",
@@ -169,23 +171,29 @@ function PROCESS_HOSTEL_CHECKOUT_DATA(
     if (!categorized[cls].length) delete categorized[cls];
   });
 
-  keyFiltersDatahostelCheckout = GET_UNIQUE_REQUESTED_BY_HC(requestedByMap);
-
+  keyFiltersDatahostelCheckout = populateKeyFilterCheckOut(categorized);
   allData = categorized;
 
   return categorized;
 }
 
-function GET_UNIQUE_REQUESTED_BY_HC(data) {
-  return {
-    requestedBy: [
-      ...new Set(
-        Object.values(data)
-          .map((obj) => obj.requestedBy || "")
-          .filter(Boolean),
-      ),
-    ],
-  };
+function populateKeyFilterCheckOut(data) {
+  const counts = {};
+
+  Object.values(data || {})
+    .flat()
+    .forEach((obj) => {
+      const name = obj.requestedBy || "";
+      if (name) {
+        counts[name] = (counts[name] || 0) + 1;
+      }
+    });
+
+  const requestedBy = Object.entries(counts).map(
+    ([name, count]) => `${name} (${count})`,
+  );
+
+  return requestedBy.length ? { requestedBy } : {};
 }
 
 function populateMultiSelectDropdownHostelCheckout() {
@@ -249,7 +257,7 @@ async function hostelCheckoutSubClick() {
       if (!obj) return;
 
       payload.push({
-        studentName: selectedName, // ✅ one student one row
+        studentName: selectedName,
         requestedBy: obj.requestedBy || "",
         reason: obj.reason || "",
         durationType: obj.durationType || "",
@@ -304,6 +312,10 @@ function removeSelectedDataFromPendingEntryHostelCheckout() {
       delete pendinghostelCheckoutList[cls];
     }
   });
+
+  keyFiltersDatahostelCheckout = populateKeyFilterCheckOut(
+    pendinghostelCheckoutList,
+  );
 }
 
 function hostelCheckoutBackBtnClick() {
