@@ -15,7 +15,7 @@ CREATE_MULTI_SELECT_DROPDOWN_WITH_CATEGORY_WITH_KEYFILTER({
   keyFilters: {},
 });
 
-function PROCESS_HOSTEL_CHECKOUT_DATA(
+function old_PROCESS_HOSTEL_CHECKOUT_DATA(
   hcReqApprovedSheetData,
   hcReqSheetData,
   allStudentsData,
@@ -174,6 +174,190 @@ function PROCESS_HOSTEL_CHECKOUT_DATA(
   keyFiltersDatahostelCheckout = populateKeyFilterCheckOut(categorized);
   allData = categorized;
 
+  return categorized;
+}
+
+function PROCESS_HOSTEL_CHECKOUT_DATA(
+  hcReqApprovedSheetData,
+  hcReqSheetData,
+  allStudentsData,
+) {
+  hostelCheckoutRowMap = {};
+  const today = new Date();
+
+  const requestMap = {};
+
+  function isSameDay(d1, d2) {
+    return (
+      d1 &&
+      d2 &&
+      d1.getFullYear() === d2.getFullYear() &&
+      d1.getMonth() === d2.getMonth() &&
+      d1.getDate() === d2.getDate()
+    );
+  }
+
+  function getDateValue(dateStr) {
+    if (!dateStr) return null;
+    const parsed = PARSE_IST_DATE(dateStr);
+    if (!parsed || isNaN(parsed.getTime())) return null;
+    return parsed;
+  }
+
+  function formatDateTime(dateObj) {
+    const dd = String(dateObj.getDate()).padStart(2, "0");
+    const mm = String(dateObj.getMonth() + 1).padStart(2, "0");
+    const yyyy = dateObj.getFullYear();
+
+    const hh = String(dateObj.getHours()).padStart(2, "0");
+    const min = String(dateObj.getMinutes()).padStart(2, "0");
+
+    return `${dd}/${mm}/${yyyy} ${hh}:${min}`;
+  }
+
+  // =====================================
+  // 1. PROCESS ONLY TODAY REQUESTS
+  // =====================================
+  for (let i = 1; i < hcReqSheetData.length; i++) {
+    const row = hcReqSheetData[i];
+
+    // row[0] = Date
+    // row[1] = Request DateTime
+    // row[2] = Student Names
+
+    const rowDate = getDateValue(row[0]);
+    if (!isSameDay(rowDate, today)) continue;
+    const requestTime = getDateValue(row[1]);
+    const requestedBy = row[3] || "";
+    const reason = row[4] || "";
+    const durationType = (row[5] || "").toLowerCase();
+    const durationValue = Number(row[6]) || 0;
+    const purpose = row[7] || "";
+    const otp = row[8] || "";
+    const now = new Date();
+    const lastTimeDate = new Date(now);
+
+    if (durationType === "day") {
+      lastTimeDate.setDate(lastTimeDate.getDate() + durationValue);
+    } else {
+      lastTimeDate.setMinutes(lastTimeDate.getMinutes() + durationValue);
+    }
+
+    const lastTime = formatDateTime(lastTimeDate);
+    const studentList = row[2]?.split("\n") || [];
+
+    studentList.forEach((studentName) => {
+      const cleanName = studentName.trim();
+      if (!cleanName) return;
+      const originalKey = cleanName.replace(/^s_/, "");
+      const studentObj = allStudentsData[originalKey];
+
+      // =====================================
+      // STUDENT NOT FOUND
+      // =====================================
+      if (!studentObj) return;
+
+      const resident = studentObj.currentResident;
+
+      const movementTime = getDateValue(studentObj.hostelCheckincheckoutTime);
+
+      // =====================================
+      // KEEP ONLY:
+      // currentResident === Y
+      // AND
+      // requestTime > movementTime
+      //
+      // Means: request happened AFTER last checkin
+      // =====================================
+      let shouldInclude = false;
+
+      if (
+        resident === "Y" &&
+        requestTime &&
+        movementTime &&
+        requestTime.getTime() > movementTime.getTime()
+      ) {
+        shouldInclude = true;
+      }
+
+      if (!shouldInclude) return;
+
+      requestMap[cleanName] = {
+        requestedBy: requestedBy,
+        reason: reason,
+        durationType: durationType,
+        duration: durationValue,
+        purpose: purpose,
+        lastTime: lastTime,
+        otp: otp,
+      };
+    });
+  }
+  debugger;
+  // =====================================
+  // 2. CATEGORY INIT
+  // =====================================
+  const ALL_CLASS_NAME =
+    "Pre Nursery, Nursery, KG, UKG, I, II, III, IV, V, VI, VII, VIII, IX, X, XI, XII";
+
+  const categorized = {};
+
+  ALL_CLASS_NAME.split(",").forEach((c) => {
+    const cls = c.trim();
+
+    const clsHindi = CLASS_NAME_HINDI_MAP[cls] || cls;
+
+    categorized[clsHindi] = [];
+  });
+
+  categorized["Others"] = [];
+
+  // =====================================
+  // 3. FINAL MAP
+  // =====================================
+  Object.keys(requestMap).forEach((name) => {
+    const originalKey = name.replace(/^s_/, "");
+    const obj = allStudentsData[originalKey];
+    const requestedByObj = requestMap[name] || {};
+    const cls = obj?.studentOrgClassName;
+    const clsHindi = CLASS_NAME_HINDI_MAP[cls] || cls;
+    const finalObj = {
+      value: `${obj?.studentHindiName || name}${
+        requestedByObj.otp ? ` (${requestedByObj.otp})` : ""
+      }`,
+      englishValue: name,
+      class: cls || "",
+      enableTime: "",
+      requestedBy: requestedByObj.requestedBy || "",
+      reason: requestedByObj.reason || "",
+      durationType: requestedByObj.durationType || "",
+      duration: requestedByObj.duration || "",
+      purpose: requestedByObj.purpose || "",
+      lastTime: requestedByObj.lastTime || "",
+      rowNo: obj?.rowNo || "",
+    };
+
+    hostelCheckoutRowMap[name] = obj?.rowNo || "";
+
+    if (!obj || !cls || !categorized[clsHindi]) {
+      categorized["Others"].push(finalObj);
+      return;
+    }
+
+    categorized[clsHindi].push(finalObj);
+  });
+
+  // =====================================
+  // 4. REMOVE EMPTY
+  // =====================================
+  Object.keys(categorized).forEach((cls) => {
+    if (!categorized[cls]?.length) {
+      delete categorized[cls];
+    }
+  });
+
+  keyFiltersDatahostelCheckout = populateKeyFilterCheckOut(categorized);
+  allData = categorized;
   return categorized;
 }
 
