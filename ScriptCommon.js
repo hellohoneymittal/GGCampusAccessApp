@@ -2243,6 +2243,25 @@ function PARSE_IST_DATE(dateString) {
   let parts;
 
   // =============================
+  // 0. dd-MMM-yyyy HH:mm / dd-MMMM-yyyy HH:mm
+  // =============================
+  parts = dateString.match(
+    /^(\d{1,2})-([A-Za-z]+)-(\d{4})\s+(\d{1,2}):(\d{2})$/,
+  );
+
+  if (parts) {
+    const day = parseInt(parts[1], 10);
+    const month = monthNames[parts[2].toLowerCase()];
+    const year = parseInt(parts[3], 10);
+    const hour = parseInt(parts[4], 10);
+    const minute = parseInt(parts[5], 10);
+
+    if (month === undefined) return null;
+
+    return new Date(year, month, day, hour, minute, 0);
+  }
+
+  // =============================
   // 1. dd-MMM-yyyy / dd-MMMM-yyyy
   // =============================
   parts = dateString.match(/^(\d{1,2})-([A-Za-z]+)-(\d{4})/);
@@ -2278,6 +2297,23 @@ function PARSE_IST_DATE(dateString) {
     const year = parseInt(parts[3], 10);
 
     return new Date(year, month, day);
+  }
+
+  // =============================
+  // 3. dd/MM/yyyy HH:MM
+  // =============================
+  parts = dateString.match(
+    /^(\d{1,2})\/(\d{1,2})\/(\d{4})\s+(\d{1,2}):(\d{2})$/,
+  );
+
+  if (parts) {
+    const day = parseInt(parts[1], 10);
+    const month = parseInt(parts[2], 10) - 1;
+    const year = parseInt(parts[3], 10);
+    const hour = parseInt(parts[4], 10);
+    const minute = parseInt(parts[5], 10);
+
+    return new Date(year, month, day, hour, minute, 0);
   }
 
   // =============================
