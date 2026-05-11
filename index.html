@@ -139,48 +139,76 @@
               <p id="login-user-name-lbl_fp"></p>
             </div>
 
-            <button
-              class="green"
-              id="ggStudentDailyExitTrackerBtn"
-              onclick="studentDailyExitBtnClick()"
-              style="display: none"
-            >
-              Student Daily Exit
-            </button>
-            <button
-              class="green"
-              id="ggStdEntryBtn"
-              onclick="ggStdEntryBtnClick()"
-              style="display: none"
-            >
-              Tution Student Check in
-            </button>
-            <button
-              class="green"
-              id="ggSplStdEntryBtn"
-              onclick="ggSplStdEntryBtnClick()"
-              style="display: none"
-            >
-              Special Entry Check in System
-            </button>
+            <div class="accordion-container">
+              <div class="accordion-item">
+                <button class="accordion-header">
+                  Day Scholars
+                  <span class="icon">▶</span>
+                </button>
 
-            <button
-              class="green"
-              id="ggHostelCheckoutBtn"
-              onclick="ggHostelCheckoutBtnClick()"
-              style="display: none"
-            >
-              Hostelers Exit / Checkout System
-            </button>
+                <div class="accordion-content">
+                  <div class="question-grid">
+                    <button
+                      class="green"
+                      id="ggStudentDailyExitTrackerBtn"
+                      onclick="studentDailyExitBtnClick()"
+                      style="display: none"
+                    >
+                      Student Exit / Checkout System
+                    </button>
 
-            <button
-              class="blue"
-              id="ggHostelCheckinBtn"
-              onclick="ggHostelCheckinBtnClick()"
-              style="display: none"
-            >
-              Hostelers Entry / Checkin System
-            </button>
+                    <button
+                      class="blue"
+                      id="ggStdEntryBtn"
+                      onclick="ggStdEntryBtnClick()"
+                      style="display: none"
+                    >
+                      Tution Student Check in
+                    </button>
+
+                    <button
+                      class="blue"
+                      id="ggSplStdEntryBtn"
+                      onclick="ggSplStdEntryBtnClick()"
+                      style="display: none"
+                    >
+                      Special Entry Check in System
+                    </button>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <div class="accordion-container">
+              <div class="accordion-item">
+                <button class="accordion-header">
+                  Hostellers
+                  <span class="icon">▶</span>
+                </button>
+
+                <div class="accordion-content">
+                  <div class="question-grid">
+                    <button
+                      class="green"
+                      id="ggHostelCheckoutBtn"
+                      onclick="ggHostelCheckoutBtnClick()"
+                      style="display: none"
+                    >
+                      Hostelers Exit / Checkout System
+                    </button>
+
+                    <button
+                      class="blue"
+                      id="ggHostelCheckinBtn"
+                      onclick="ggHostelCheckinBtnClick()"
+                      style="display: none"
+                    >
+                      Hostelers Entry / Checkin System
+                    </button>
+                  </div>
+                </div>
+              </div>
+            </div>
 
             <button class="red" onclick="onLogoutClick()">Logout</button>
           </div>
