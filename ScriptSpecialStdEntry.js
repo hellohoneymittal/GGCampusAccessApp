@@ -16,15 +16,29 @@ CREATE_MULTI_SELECT_DROPDOWN_WITH_CATEGORY_WITH_KEYFILTER({
 });
 
 function GET_UNIQUE_REQUESTED_BY(data) {
-  return {
-    requestedBy: [
-      ...new Set(
-        Object.values(data)
-          .map((obj) => obj.requestedBy || "")
-          .filter(Boolean),
-      ),
-    ],
-  };
+  const counts = {};
+
+  let finalArray = [];
+
+  if (Array.isArray(data)) {
+    finalArray = data;
+  } else {
+    finalArray = Object.values(data || {}).flat();
+  }
+
+  finalArray.forEach((obj) => {
+    const name = obj.requestedBy || "";
+
+    if (name) {
+      counts[name] = (counts[name] || 0) + 1;
+    }
+  });
+
+  const requestedBy = Object.entries(counts).map(
+    ([name, count]) => `${name} (${count})`,
+  );
+
+  return requestedBy.length ? { requestedBy } : {};
 }
 
 function PROCESS_DAILY_ENTRY_DATA(
@@ -171,7 +185,7 @@ function PROCESS_DAILY_ENTRY_DATA(
     if (!categorized[cls].length) delete categorized[cls];
   });
 
-  splKeyFiltersDataStdEntry = GET_UNIQUE_REQUESTED_BY(requestedByMap);
+  splKeyFiltersDataStdEntry = GET_UNIQUE_REQUESTED_BY(categorized);
   allData = categorized;
   return categorized;
 }
@@ -187,8 +201,10 @@ function splPopulateMultiSelectDropdownEntry() {
       );
     },
     {
-      showSelectAll: true,
+      showSelectAll: false,
       showFilters: true,
+      showCategoryView: false,
+      showDataBasedOnFilters: true,
     },
     splKeyFiltersDataStdEntry,
   );
@@ -302,6 +318,7 @@ function splRemoveSelectedDataFromPendingEntry() {
       delete splPendingStdEntryList[cls];
     }
   });
+  splKeyFiltersDataStdEntry = GET_UNIQUE_REQUESTED_BY(splPendingStdEntryList);
 }
 
 function splStdEntryBackBtnClick() {

@@ -14,14 +14,15 @@ CREATE_MULTI_SELECT_DROPDOWN_WITH_CATEGORY_WITH_KEYFILTER({
   keyFilters: {},
 });
 
-function PROCESS_DAILY_ENTRY_DATA(exitData, allStudentsData, roleData) {
+function PROCESS_TUTION_ENTRY_DATA(allStudentsData, tutionEntryData, roleData) {
   const today = new Date();
+
   const presentMap = new Map(); // t_key → original key
-  const exitSet = new Set();
 
   function isSameDay(d1, d2) {
     return (
       d1 &&
+      d2 &&
       d1.getFullYear() === d2.getFullYear() &&
       d1.getMonth() === d2.getMonth() &&
       d1.getDate() === d2.getDate()
@@ -42,24 +43,30 @@ function PROCESS_DAILY_ENTRY_DATA(exitData, allStudentsData, roleData) {
   });
 
   // =============================
-  // 2. EXIT
+  // 2. ALREADY CHECKED IN
   // =============================
-  for (let i = 1; i < exitData.length; i++) {
-    const row = exitData[i];
+  const alreadyCheckedInSet = new Set();
+
+  for (let i = 1; i < tutionEntryData.length; i++) {
+    const row = tutionEntryData[i];
+
     const rowDate = PARSE_IST_DATE(row[0]);
+
+    // Only today's entries
     if (!isSameDay(rowDate, today)) continue;
 
-    (row[2]?.split("\n") || []).forEach((s) => {
-      const name = s.trim();
-      if (name) exitSet.add(name); // must match t_key format
-    });
+    const studentName = row[2]?.trim();
+
+    if (studentName) {
+      alreadyCheckedInSet.add(studentName);
+    }
   }
 
   // =============================
   // 3. PENDING
   // =============================
   const pending = Array.from(presentMap.keys()).filter(
-    (student) => !exitSet.has(student),
+    (student) => !alreadyCheckedInSet.has(student),
   );
 
   // =============================
@@ -68,6 +75,7 @@ function PROCESS_DAILY_ENTRY_DATA(exitData, allStudentsData, roleData) {
   const filteredWithObj = pending
     .map((student) => {
       const originalKey = presentMap.get(student);
+
       return {
         name: student, // t_key
         obj: allStudentsData[originalKey],
@@ -77,8 +85,14 @@ function PROCESS_DAILY_ENTRY_DATA(exitData, allStudentsData, roleData) {
       if (!obj) return false;
 
       if (roleData === "Admin") return true;
-      if (roleData === "H Admin") return obj.hostler === "Y";
-      if (roleData === "NH Admin") return obj.hostler === "N";
+
+      if (roleData === "H Admin") {
+        return obj.hostler === "Y";
+      }
+
+      if (roleData === "NH Admin") {
+        return obj.hostler === "N";
+      }
 
       return false;
     });
@@ -99,36 +113,67 @@ function PROCESS_DAILY_ENTRY_DATA(exitData, allStudentsData, roleData) {
   });
 
   // =============================
-  // FINAL DATA PUSH
+  // 6. FINAL DATA PUSH
   // =============================
   filteredWithObj.forEach(({ name, obj }) => {
     const cls = obj.studentOrgClassName;
+
     if (!cls) return;
 
     const clsHindi = CLASS_NAME_HINDI_MAP[cls] || cls;
+
     if (!categorized[clsHindi]) return;
 
     const engName = name; // already t_key
-    const hindiName = obj.studentHindiName || obj.studentName;
+
+    const hindiName = obj.studentHindiName || obj.studentName || "";
+
     const modifiedHindiName = `t_${hindiName}`;
 
     categorized[clsHindi].push({
       value: modifiedHindiName,
       englishValue: engName,
       class: cls,
-      enableTime: obj.lastClassTime || "",
+      enableTime: obj.startTime || "",
       tutionTeacher: obj.tutionTeacher || "",
     });
   });
 
   // =============================
-  // REMOVE EMPTY CLASSES
+  // 7. REMOVE EMPTY CLASSES
   // =============================
   Object.keys(categorized).forEach((cls) => {
-    if (!categorized[cls].length) delete categorized[cls];
+    if (!categorized[cls].length) {
+      delete categorized[cls];
+    }
   });
 
+  console.log(categorized);
+
+  keyFiltersDataStdEntry = populateKeyFilterTutionStd(categorized, [
+    "tutionTeacher",
+  ]);
+
   return categorized;
+}
+
+function populateKeyFilterTutionStd(data) {
+  const counts = {};
+
+  Object.values(data || {})
+    .flat()
+    .forEach((obj) => {
+      const name = obj.tutionTeacher || "";
+      if (name) {
+        counts[name] = (counts[name] || 0) + 1;
+      }
+    });
+
+  const tutionTeacher = Object.entries(counts).map(
+    ([name, count]) => `${name} (${count})`,
+  );
+
+  return tutionTeacher.length ? { tutionTeacher } : {};
 }
 
 function populateMultiSelectDropdownEntry() {
@@ -142,8 +187,10 @@ function populateMultiSelectDropdownEntry() {
       );
     },
     {
-      showSelectAll: true,
+      showSelectAll: false,
       showFilters: true,
+      showCategoryView: false,
+      showDataBasedOnFilters: true,
     },
     keyFiltersDataStdEntry,
   );
@@ -153,14 +200,12 @@ async function ggStdEntryBtnClick() {
   const response = await CALL_API("GET_STD_ENTRY_RAW_DATA", {});
   const role = selectedUser?.role?.["Student Daily Exit Tracker Role"];
 
-  pendingStdEntryList = PROCESS_DAILY_ENTRY_DATA(
-    response?.data?.exitData,
+  pendingStdEntryList = PROCESS_TUTION_ENTRY_DATA(
     response?.data?.allStudentsData,
+    response?.data?.tutionEntryData,
     role,
   );
-  keyFiltersDataStdEntry = GET_KEY_FILTERS(response?.data?.allStudentsData, [
-    "tutionTeacher",
-  ]);
+
   console.log(pendingStdEntryList);
   populateMultiSelectDropdownEntry();
   SHOW_SPECIFIC_DIV("stdEntryPopup");
@@ -224,6 +269,10 @@ function removeSelectedDataFromPendingEntry() {
       delete pendingStdEntryList[cls];
     }
   });
+
+  keyFiltersDataStdEntry = populateKeyFilterTutionStd(pendingStdEntryList, [
+    "tutionTeacher",
+  ]);
 }
 
 function stdEntryBackBtnClick() {
