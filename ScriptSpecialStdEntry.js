@@ -212,7 +212,7 @@ function splPopulateMultiSelectDropdownEntry() {
 
 async function ggSplStdEntryBtnClick() {
   const response = await CALL_API("GET_SPL_ENTRY_RAW_DATA", {});
-  debugger;
+
   splPendingStdEntryList = PROCESS_DAILY_ENTRY_DATA(
     response?.data?.splEntryData,
     response?.data?.specialEntryRequestData,

@@ -36,13 +36,14 @@ CREATE_MULTI_SELECT_DROPDOWN_WITH_CATEGORY_WITH_KEYFILTER({
 async function studentDailyExitBtnClick() {
   const response = await CALL_API("GET_DAILY_EXIT_RAW_DATA", {});
   const role = selectedUser?.role?.["Student Daily Exit Tracker Role"];
-  debugger;
+
   pendingStdList = PROCESS_DAILY_EXIT_DATA(
     response?.data?.attendanceData,
     response?.data?.exitData,
     response?.data?.allStudentsData,
     response?.data?.tutionEntryData,
     response?.data?.specialEntryApprovedData,
+    response?.data?.otpRequestData,
     role,
   );
   keyFiltersDataStdExit = GET_KEY_FILTERS(response?.data?.allStudentsData, [
@@ -113,6 +114,7 @@ function PROCESS_DAILY_EXIT_DATA(
   allStudentsData,
   tutionEntryData,
   specialEntryApprovedData,
+  otpRequestData,
   filterType,
 ) {
   const today = new Date();
@@ -194,6 +196,36 @@ function PROCESS_DAILY_EXIT_DATA(
     (student) => !exitSet.has(student),
   );
 
+  //OTP working
+  const otpMap = new Map();
+
+  for (let i = 1; i < otpRequestData.length; i++) {
+    const row = otpRequestData[i];
+
+    // Status should start with "Approved"
+    if (!row[2] || !row[2].toString().trim() === "Approved") {
+      continue;
+    }
+
+    const studentNames = row[5]; // Student Names column
+    const otp = row[8]; // OTP column
+
+    if (!studentNames || !otp) continue;
+
+    // Example:
+    // or multiple names separated by new line
+    studentNames
+      .toString()
+      .split("\n")
+      .forEach((name) => {
+        const match = name.match(/\((\d+)\)/);
+
+        if (match) {
+          otpMap.set(match[1], otp);
+        }
+      });
+  }
+
   // =============================
   // 6. FILTER + OBJECT MAP
   // =============================
@@ -253,8 +285,14 @@ function PROCESS_DAILY_EXIT_DATA(
 
     if (!categorized[clsHindi]) return;
 
+    const studentId = obj.studentName.split("_")[0];
+    const otp = otpMap.get(studentId);
+
     categorized[clsHindi].push({
-      value: obj.studentHindiName || obj.studentName,
+      value: otp
+        ? `${obj.studentHindiName || obj.studentName} (${otp})`
+        : obj.studentHindiName || obj.studentName,
+
       englishValue: obj.studentName,
       class: cls,
       enableTime: obj.lastClassTime || "",
