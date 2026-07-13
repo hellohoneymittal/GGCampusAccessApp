@@ -266,6 +266,17 @@ function PROCESS_DAILY_EXIT_DATA(
   const ALL_CLASS_NAME =
     "Pre Nursery, Nursery, KG, UKG, I, II, III, IV, V, VI, VII, VIII, IX, X, XI, XII, Others";
 
+  function getCurrentTimeMinusMinutes(minutes) {
+    const now = new Date();
+
+    now.setMinutes(now.getMinutes() - minutes);
+
+    const hours = String(now.getHours()).padStart(2, "0");
+    const mins = String(now.getMinutes()).padStart(2, "0");
+
+    return `${hours}:${mins}`;
+  }
+
   const categorized = {};
 
   ALL_CLASS_NAME.split(",").forEach((c) => {
@@ -288,6 +299,10 @@ function PROCESS_DAILY_EXIT_DATA(
     const studentId = obj.studentName.split("_")[0];
     const otp = otpMap.get(studentId);
 
+    const enableTime = otp
+      ? getCurrentTimeMinusMinutes(10)
+      : obj.lastClassTime || "";
+
     categorized[clsHindi].push({
       value: otp
         ? `${obj.studentHindiName || obj.studentName} (${otp})`
@@ -295,7 +310,7 @@ function PROCESS_DAILY_EXIT_DATA(
 
       englishValue: obj.studentName,
       class: cls,
-      enableTime: obj.lastClassTime || "",
+      enableTime: enableTime,
       driverName: obj.driverName || "",
     });
   });
