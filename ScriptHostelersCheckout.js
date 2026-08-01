@@ -272,7 +272,6 @@ function PROCESS_HOSTEL_CHECKOUT_DATA(
       let shouldInclude = false;
 
       if (
-        resident === "Y" &&
         requestTime &&
         movementTime &&
         requestTime.getTime() > movementTime.getTime()
