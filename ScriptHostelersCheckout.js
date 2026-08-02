@@ -274,8 +274,7 @@ function PROCESS_HOSTEL_CHECKOUT_DATA(
       if (
         resident === "Y" &&
         requestTime &&
-        movementTime &&
-        requestTime.getTime() > movementTime.getTime()
+        (!movementTime || requestTime.getTime() > movementTime.getTime())
       ) {
         shouldInclude = true;
       }
