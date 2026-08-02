@@ -263,7 +263,7 @@ function PROCESS_HOSTEL_CHECKOUT_DATA(
 
       // =====================================
       // KEEP ONLY:
-      // currentResident === Y
+      // resident === Y
       // AND
       // requestTime > movementTime
       //
@@ -272,6 +272,7 @@ function PROCESS_HOSTEL_CHECKOUT_DATA(
       let shouldInclude = false;
 
       if (
+        resident === "Y" &&
         requestTime &&
         movementTime &&
         requestTime.getTime() > movementTime.getTime()
