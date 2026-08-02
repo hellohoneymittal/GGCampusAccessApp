@@ -166,7 +166,6 @@ function populateMultiSelectDropdownHostelCheckin() {
 
 async function ggHostelCheckinBtnClick() {
   const response = await CALL_API("GET_HOSTEL_CHECKIN_APPROVAL_RAW_DATA", {});
-  debugger;
   pendinghostelCheckinList = PROCESS_HOSTEL_CHECKIN_DATA(
     response?.data?.hcReqApprovedSheetData,
     response?.data?.hChkInDataSheetData,
