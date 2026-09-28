@@ -399,7 +399,46 @@ function populateMultiSelectDropdownHostelCheckout() {
   );
 }
 
+function checkAccessibility() {
+  // Check Hostel Checkout access
+  const username = selectedUser?.name?.trim();
+
+  const now = new Date();
+  const currentMinutes = now.getHours() * 60 + now.getMinutes();
+
+  const START_TIME = 20 * 60; // 8:00 PM
+  const END_TIME = 6 * 60; // 6:00 AM
+
+  // Only for honey
+  if (
+    username === "Kasturi Kesavi Mataji" ||
+    username === "Sesa Sevak Prabhuji"
+  ) {
+    // Allowed: 8:00 PM - 11:59 PM OR 12:00 AM - 5:59 AM
+    const isAllowed = currentMinutes >= START_TIME || currentMinutes < END_TIME;
+
+    if (!isAllowed) {
+      console.log("❌ Hostel Checkout Access Denied for honey");
+      SHOW_ERROR_POPUP("⏰ Access allowed only from 8:00 PM to 6:00 AM");
+      console.log(
+        "🕒 Current Time:",
+        `${String(now.getHours()).padStart(2, "0")}:${String(now.getMinutes()).padStart(2, "0")}`,
+      );
+      return false;
+    }
+
+    console.log("✅ Hostel Checkout Access Allowed for honey");
+  }
+  return true;
+}
+
 async function ggHostelCheckoutBtnClick() {
+  const isAbleToAccess = checkAccessibility();
+
+  if (!isAbleToAccess) {
+    return;
+  }
+
   const response = await CALL_API("GET_HOSTEL_CHECKOUT_APPROVAL_RAW_DATA", {});
   const role = selectedUser?.role?.["Student Daily Exit Tracker Role"];
 

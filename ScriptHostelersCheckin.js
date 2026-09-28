@@ -165,6 +165,12 @@ function populateMultiSelectDropdownHostelCheckin() {
 }
 
 async function ggHostelCheckinBtnClick() {
+  const isAbleToAccess = checkAccessibility();
+
+  if (!isAbleToAccess) {
+    return;
+  }
+
   const response = await CALL_API("GET_HOSTEL_CHECKIN_APPROVAL_RAW_DATA", {});
   pendinghostelCheckinList = PROCESS_HOSTEL_CHECKIN_DATA(
     response?.data?.hcReqApprovedSheetData,
